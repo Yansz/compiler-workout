@@ -115,7 +115,7 @@ static void printValue (void *p) {
       printStringBuf ("[");
       for (int i = 0; i < LEN(a->tag); i++) {
         printValue ((void*)((int*) a->contents)[i]);
-    if (i != LEN(a->tag) - 1) printStringBuf (", ");
+	if (i != LEN(a->tag) - 1) printStringBuf (", ");
       }
       printStringBuf ("]");
       break;
@@ -123,12 +123,12 @@ static void printValue (void *p) {
     case SEXP_TAG:
       printStringBuf ("`%s", de_hash (TO_SEXP(p)->tag));
       if (LEN(a->tag)) {
-    printStringBuf (" (");
-    for (int i = 0; i < LEN(a->tag); i++) {
-      printValue ((void*)((int*) a->contents)[i]);
-      if (i != LEN(a->tag) - 1) printStringBuf (", ");
-    }
-    printStringBuf (")");
+	printStringBuf (" (");
+	for (int i = 0; i < LEN(a->tag); i++) {
+	  printValue ((void*)((int*) a->contents)[i]);
+	  if (i != LEN(a->tag) - 1) printStringBuf (", ");
+	}
+	printStringBuf (")");
       }
       break;
       
@@ -223,7 +223,7 @@ extern int Btag (int t, void *d) { // Order changed for easier handling in X86
   data *r = TO_DATA(d);
   return BOX(TAG(r->tag) == SEXP_TAG && TO_SEXP(d)->tag == t);
 }
-     
+		 
 extern void Bsta (int n, void *s, int v, ...) { // Order changed for easier handling in X86
   va_list args;
   int i, k;
