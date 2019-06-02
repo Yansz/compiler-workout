@@ -35,20 +35,42 @@ let update x v s = fun y -> if x = y then v else s y
 (* An example of a non-trivial state: *)                                                   
 let s = update "x" 1 @@ update "y" 2 @@ update "z" 3 @@ update "t" 4 empty
 
-(* Some testing; comment this definition out when submitting the solution. *)
+(* Some testing; comment this definition out when submitting the solution.
 let _ =
   List.iter
     (fun x ->
        try  Printf.printf "%s=%d\n" x @@ s x
        with Failure s -> Printf.printf "%s\n" s
     ) ["x"; "a"; "y"; "z"; "t"; "b"]
+*)
 
 (* Expression evaluator
-
      val eval : state -> expr -> int
  
    Takes a state and an expression, and returns the value of the expression in 
    the given state.
 *)
-let eval = failwith "Not implemented yet"
-                    
+(* bool2int and int2bool converters *)
+let bool2int b = if b then 1 else 0
+let int2bool x = x != 0
+
+(* Binop evaluator *)
+let eval_op op l r = match op with
+  | "+"  -> l + r
+  | "-"  -> l - r
+  | "*"  -> l * r
+  | "/"  -> l / r
+  | "%"  -> l mod r
+  | "<"  -> bool2int (l < r)
+  | "<=" -> bool2int (l <= r)
+  | ">"  -> bool2int (l > r)
+  | ">=" -> bool2int (l >= r)
+  | "==" -> bool2int (l = r)
+  | "!=" -> bool2int (l != r)
+  | "&&" -> bool2int (int2bool l && int2bool r)
+  | "!!" -> bool2int (int2bool l || int2bool r)
+
+let rec eval s e = match e with
+  | Const c -> c
+  | Var n -> s n
+  | Binop (op, l, r) -> eval_op op (eval s l) (eval s r)
