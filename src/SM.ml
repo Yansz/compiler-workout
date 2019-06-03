@@ -1,56 +1,43 @@
-open GT       
-open Language
-       
-(* The type for the stack machine instructions *)
-@type insn =
-(* binary operator                 *) | BINOP of string
-(* put a constant on the stack     *) | CONST of int                 
-(* read to stack                   *) | READ
-(* write from stack                *) | WRITE
-(* load a variable to the stack    *) | LD    of string
-(* store a variable from the stack *) | ST    of string
-(* a label                         *) | LABEL of string
-(* unconditional jump              *) | JMP   of string                                                                                                                
-(* conditional jump                *) | CJMP  of string * string with show
-                                                   
-(* The type for the stack machine program *)                                                               
-type prg = insn list
+TOPFILE = rc
+OCAMLC = ocamlfind c
+OCAMLOPT = ocamlfind opt
+OCAMLDEP = ocamlfind dep
+SOURCES = Language.ml SM.ml X86.ml Driver.ml
+CAMLP5 = -syntax camlp5o -package ostap.syntax,GT.syntax.all
+PXFLAGS = $(CAMLP5)
+BFLAGS = -rectypes -g
+OFLAGS = $(BFLAGS)
 
-(* The type for the stack machine configuration: a stack and a configuration from statement
-   interpreter
- *)
-type config = int list * Stmt.config
+all: .depend $(TOPFILE).opt
 
-(* Stack machine interpreter
+.depend: $(SOURCES)
+	$(OCAMLDEP) $(PXFLAGS) *.ml > .depend
 
-     val eval : env -> config -> prg -> config
+$(TOPFILE).opt: $(SOURCES:.ml=.cmx)
+	$(OCAMLOPT) -o $(TOPFILE).opt $(OFLAGS) $(LIBS:.cma=.cmxa) -linkpkg -package ostap $(SOURCES:.ml=.cmx)
 
-   Takes an environment, a configuration and a program, and returns a configuration as a result. The
-   environment is used to locate a label to jump to (via method env#labeled <label_name>)
-*)                         
-let rec eval env conf prog = failwith "Not yet implemented"
+$(TOPFILE).byte: $(SOURCES:.ml=.cmo)
+	$(OCAMLC) -o $(TOPFILE).byte $(BFLAGS) $(LIBS) -linkpkg -package ostap $(SOURCES:.ml=.cmo) 
 
-(* Top-level evaluation
+clean:
+	rm -Rf *.cmi *.cmo *.cmx *.annot *.o *.opt *.byte *~ .depend
 
-     val run : prg -> int list -> int list
+-include .depend
+# generic rules
 
-   Takes a program, an input stream, and returns an output stream this program calculates
-*)
-let run p i =
-  let module M = Map.Make (String) in
-  let rec make_map m = function
-  | []              -> m
-  | (LABEL l) :: tl -> make_map (M.add l tl m) tl
-  | _ :: tl         -> make_map m tl
-  in
-  let m = make_map M.empty p in
-  let (_, (_, _, o)) = eval (object method labeled l = M.find l m end) ([], (Expr.empty, i, [])) p in o
+###############
+%.cmi: %.mli
+	$(OCAMLC) -c $(BFLAGS) $(PXFLAGS) $<
 
-(* Stack machine compiler
+# Note: cmi <- mli should go first
+%.cmi: %.ml
+	$(OCAMLC) -c $(BFLAGS) $(PXFLAGS) $<
 
-     val compile : Language.Stmt.t -> prg
+%.cmo: %.ml
+	$(OCAMLC) -c $(BFLAGS) $(PXFLAGS) $<
 
-   Takes a program in the source language and returns an equivalent program for the
-   stack machine
-*)
-let compile p = failwith "Not yet implemented"
+%.o: %.ml
+	$(OCAMLOPT) -c $(OFLAGS) $(STATIC) $(PXFLAGS) $<
+
+%.cmx: %.ml
+	$(OCAMLOPT) -c $(OFLAGS) $(STATIC) $(PXFLAGS) $<
