@@ -35,14 +35,38 @@ module Expr =
     let update x v s = fun y -> if x = y then v else s y
 
     (* Expression evaluator
-
           val eval : state -> t -> int
  
        Takes a state and an expression, and returns the value of the expression in 
        the given state.
     *)
-    let eval _ = failwith "Not implemented yet"
+ let fromBool b = if b then 1 else 0
 
+    let toBool b = b <> 0
+
+    let ($) f1 f2 a b = f2 (f1 a b)
+
+    let getFunction op = match op with
+       | "+" -> (+)
+       | "-" -> (-)
+       | "*" -> ( * )
+       | "/" -> (/)
+       | "%" -> (mod)
+       | "<" -> (<) $ fromBool
+       | "<=" -> (<=) $ fromBool
+       | ">" -> (>) $ fromBool
+       | ">=" -> (>=) $ fromBool
+       | "==" -> (=) $ fromBool
+       | "!=" -> (<>) $ fromBool
+       | "&&" -> fun x y -> fromBool ((&&) (toBool x) (toBool y))
+       | "!!" -> fun x y -> fromBool ((||) (toBool x) (toBool y))
+       | _ -> raise Not_found
+
+    let rec eval state expr =  match expr with
+       | Const a -> a
+       | Var x -> state x
+       | Binop (op, x, y) -> (getFunction op)
+            (eval state x) (eval state y)
   end
                     
 (* Simple statements: syntax and sematics *)
@@ -60,13 +84,17 @@ module Stmt =
     type config = Expr.state * int list * int list 
 
     (* Statement evaluator
-
           val eval : config -> t -> config
-
        Takes a configuration and a statement, and returns another configuration
     *)
-    let eval _ = failwith "Not implemented yet"
-                                                         
+    let rec eval (state, input, output) stmt = match stmt with
+        | Read x -> (match input with
+                    | head :: tail -> (Expr.update x head state, tail, output)
+                    | _ -> failwith ("Empty input")
+                    )
+        | Write e -> (state, input, output @ [Expr.eval state e])
+        | Assign (x, e) -> (Expr.update x (Expr.eval state e) state, input, output)
+        | Seq (stmt1, stmt2) -> eval (eval (state, input, output) stmt1) stmt2
   end
 
 (* The top-level definitions *)
@@ -75,9 +103,7 @@ module Stmt =
 type t = Stmt.t    
 
 (* Top-level evaluator
-
      eval : int list -> t -> int list
-
    Takes a program and its input stream, and returns the output stream
 *)
 let eval i p =
